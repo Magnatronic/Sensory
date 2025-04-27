@@ -1,0 +1,252 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #121212;
+    color: #ffffff;
+    overflow: hidden; /* Prevent scrolling */
+    height: 100vh; /* Full viewport height */
+}
+
+/* Main app container with sidebar layout */
+.app-container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* Sidebar for controls */
+.sidebar {
+    width: 280px;
+    background-color: rgba(30, 30, 40, 0.9);
+    padding: 20px;
+    box-sizing: border-box;
+    height: 100%;
+    overflow-y: auto; /* Allow scrolling within sidebar if needed */
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    border-right: 1px solid #333;
+    transition: transform 0.3s ease;
+    z-index: 100;
+}
+
+/* Main content area containing canvas */
+.main-content {
+    flex: 1;
+    height: 100%;
+    position: relative;
+}
+
+/* Theme selector styles */
+.theme-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.theme-selector label {
+    font-size: 14px;
+    color: #ccc;
+}
+
+select {
+    padding: 8px 10px;
+    border-radius: 5px;
+    border: none;
+    background-color: #333;
+    color: white;
+    cursor: pointer;
+    width: 100%;
+}
+
+/* Button styles */
+.buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+button {
+    padding: 10px;
+    border-radius: 5px;
+    border: none;
+    background-color: #333;
+    color: white;
+    cursor: pointer;
+    width: 100%;
+    font-size: 14px;
+}
+
+button:hover {
+    background-color: #444;
+}
+
+button:disabled {
+    background-color: #555;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+#fullscreen-btn {
+    background-color: #2a5ca8;
+}
+
+#fullscreen-btn:hover {
+    background-color: #3470cc;
+}
+
+/* Theme control sliders */
+.theme-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.slider-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.slider-container label {
+    font-size: 14px;
+    color: #ccc;
+}
+
+.slider-with-value {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.slider {
+    -webkit-appearance: none;
+    flex: 1;
+    height: 8px;
+    background: #444;
+    outline: none;
+    border-radius: 4px;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: #2a5ca8;
+    cursor: pointer;
+    border-radius: 50%;
+}
+
+.slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: #2a5ca8;
+    cursor: pointer;
+    border-radius: 50%;
+    border: none;
+}
+
+.slider-value {
+    font-size: 14px;
+    color: #fff;
+    min-width: 30px;
+    text-align: right;
+}
+
+/* Canvas container styles */
+#canvas-container {
+    width: 100%;
+    height: 100%;
+    background-color: #000000;
+}
+
+/* Make sure the p5.js canvas fills the container */
+#canvas-container canvas {
+    display: block; /* Removes tiny gaps */
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Fullscreen specific styles */
+.fullscreen-active .sidebar {
+    transform: translateX(-100%); /* Hide sidebar when in fullscreen */
+    pointer-events: none;
+}
+
+.fullscreen-active:hover .sidebar {
+    transform: translateX(0); /* Show sidebar on hover when in fullscreen */
+    pointer-events: auto;
+}
+
+.fullscreen-active #canvas-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9000;
+}
+
+/* For browsers that support native fullscreen */
+#canvas-container:fullscreen {
+    width: 100vw;
+    height: 100vh;
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 768px) {
+    .app-container {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        width: 100%;
+        height: auto;
+        max-height: 50vh;
+        border-right: none;
+        border-bottom: 1px solid #333;
+    }
+    
+    .main-content {
+        height: 50vh;
+    }
+}
+
+/* Color picker styles */
+.color-pickers {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.color-picker-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.color-picker-container label {
+    font-size: 14px;
+    color: #ccc;
+}
+
+input[type="color"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 30px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 4px;
+}

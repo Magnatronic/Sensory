@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Therapy Sensory App</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- p5.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Left sidebar for controls -->
+        <div class="sidebar">
+            <div class="theme-selector">
+                <label for="theme-select">Theme:</label>
+                <select id="theme-select">
+                    <option value="snowflakes">Snowflakes</option>
+                    <!-- More themes will be added here later -->
+                </select>
+            </div>
+            
+            <div class="buttons">
+                <button id="start-btn">Start</button>
+                <button id="stop-btn" disabled>Stop</button>
+                <button id="fullscreen-btn">Full Screen</button>
+            </div>
+            
+            <div class="theme-controls snowflakes-controls">
+                <div class="color-pickers">
+                    <div class="color-picker-container">
+                        <label for="background-color">Background Color:</label>
+                        <input type="color" id="background-color" value="#000A28">
+                    </div>
+                    
+                    <div class="color-picker-container">
+                        <label for="snowflake-color">Snowflake Color:</label>
+                        <input type="color" id="snowflake-color" value="#FFFFFF">
+                    </div>
+                </div>
+                
+                <div class="slider-container">
+                    <label for="snowflake-count">Number of Snowflakes:</label>
+                    <div class="slider-with-value">
+                        <input type="range" id="snowflake-count" min="50" max="500" value="200" class="slider">
+                        <span class="slider-value" id="snowflake-count-value">200</span>
+                    </div>
+                </div>
+                
+                <div class="slider-container">
+                    <label for="snowflake-size">Snowflake Size:</label>
+                    <div class="slider-with-value">
+                        <input type="range" id="snowflake-size" min="1" max="40" value="10" class="slider">
+                        <span class="slider-value" id="snowflake-size-value">10</span>
+                    </div>
+                </div>
+                
+                <div class="slider-container">
+                    <label for="snowflake-speed">Fall Speed:</label>
+                    <div class="slider-with-value">
+                        <input type="range" id="snowflake-speed" min="0.5" max="5" value="1" step="0.1" class="slider">
+                        <span class="slider-value" id="snowflake-speed-value">1</span>
+                    </div>
+                </div>
+                
+                <div class="slider-container">
+                    <label for="wobble-intensity">Wobble Intensity:</label>
+                    <div class="slider-with-value">
+                        <input type="range" id="wobble-intensity" min="0" max="10" value="5" class="slider">
+                        <span class="slider-value" id="wobble-intensity-value">5</span>
+                    </div>
+                </div>
+                
+                <div class="slider-container">
+                    <label for="wind-strength">Wind Strength:</label>
+                    <div class="slider-with-value">
+                        <input type="range" id="wind-strength" min="0" max="10" value="0" class="slider">
+                        <span class="slider-value" id="wind-strength-value">0</span>
+                    </div>
+                </div>
+                
+                <div class="slider-container">
+                    <label for="wind-direction">Wind Direction:</label>
+                    <div class="slider-with-value">
+                        <input type="range" id="wind-direction" min="0" max="360" value="0" class="slider">
+                        <span class="slider-value" id="wind-direction-value">0°</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main content area for canvas -->
+        <div class="main-content">
+            <div id="canvas-container"></div>
+        </div>
+    </div>
+
+    <!-- Core App Files -->
+    <script src="js/themes/theme.js"></script>
+    <script src="js/themes/snowflake/snowflake.js"></script>
+    <script src="js/themes/themeManager.js"></script>
+    <script src="js/sketch.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
