@@ -49,6 +49,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         window.edgeAudioProcessor.onSoundDetected(function(intensity) {
                             console.log(`Edge detected sound! Intensity: ${intensity}`);
                             
+                            // Add debug info about ThemeManager
+                            console.log(`ThemeManager available: ${window.themeManager ? 'YES' : 'NO'}`);
+                            
                             // Access ThemeManager from the global scope
                             if (window.themeManager) {
                                 console.log(`Forwarding sound to ThemeManager with intensity: ${intensity}`);

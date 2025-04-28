@@ -161,9 +161,16 @@ class EdgeAudioProcessor {
                     this.lastTriggerTime = now;
                     const intensity = Math.min(1, relativeVolume * 5);
                     
+                    // Call the callback function
                     if (this.callbackFunction) {
                         this.callbackFunction(intensity);
                         console.log(`EdgeAudioProcessor: TRIGGERED with intensity ${intensity.toFixed(2)}`);
+                    }
+                    
+                    // Direct connection to ThemeManager for more reliability
+                    if (window.themeManager) {
+                        console.log("EdgeAudioProcessor: Directly calling ThemeManager.onSoundDetected()");
+                        window.themeManager.onSoundDetected(intensity);
                     }
                 }
             }
