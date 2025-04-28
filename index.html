@@ -27,6 +27,58 @@
                 <button id="fullscreen-btn">Full Screen</button>
             </div>
             
+            <!-- New Audio Controls Section -->
+            <div class="section-header">
+                <h3>Audio Controls</h3>
+            </div>
+            
+            <div class="audio-controls">
+                <button id="mic-toggle" class="audio-button">Enable Microphone</button>
+                
+                <div class="slider-container">
+                    <label for="sound-threshold">Sound Sensitivity:</label>
+                    <div class="slider-with-value">
+                        <input type="range" id="sound-threshold" min="0" max="100" value="50" class="slider">
+                        <span class="slider-value" id="sound-threshold-value">50</span>
+                    </div>
+                </div>
+                
+                <div class="slider-container">
+                    <label for="burst-intensity">Burst Intensity:</label>
+                    <div class="slider-with-value">
+                        <input type="range" id="burst-intensity" min="5" max="50" value="20" class="slider">
+                        <span class="slider-value" id="burst-intensity-value">20</span>
+                    </div>
+                </div>
+                
+                <div class="slider-container">
+                    <label for="burst-size">Burst Size Multiplier:</label>
+                    <div class="slider-with-value">
+                        <input type="range" id="burst-size" min="10" max="30" value="15" class="slider">
+                        <span class="slider-value" id="burst-size-value">1.5</span>
+                    </div>
+                </div>
+                
+                <div class="slider-container">
+                    <label for="color-variation">Color Variation:</label>
+                    <div class="slider-with-value">
+                        <input type="range" id="color-variation" min="0" max="100" value="30" class="slider">
+                        <span class="slider-value" id="color-variation-value">30</span>
+                    </div>
+                </div>
+                
+                <div id="volume-meter-container">
+                    <div id="volume-label">Volume:</div>
+                    <div id="volume-meter">
+                        <div id="volume-level"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section-header">
+                <h3>Snowflake Controls</h3>
+            </div>
+            
             <div class="theme-controls snowflakes-controls">
                 <div class="color-pickers">
                     <div class="color-picker-container">
@@ -37,52 +89,6 @@
                     <div class="color-picker-container">
                         <label for="snowflake-color">Snowflake Color:</label>
                         <input type="color" id="snowflake-color" value="#FFFFFF">
-                    </div>
-                </div>
-                
-                <!-- Audio Reactivity Section -->
-                <div class="audio-controls">
-                    <h3>Audio Reactivity</h3>
-                    <div class="audio-toggle-container">
-                        <button id="mic-toggle" class="toggle-btn">Enable Microphone</button>
-                    </div>
-                    
-                    <div class="audio-options">
-                        <div class="checkbox-container">
-                            <input type="checkbox" id="audio-wind" checked>
-                            <label for="audio-wind">Sound affects wind</label>
-                        </div>
-                        
-                        <div class="checkbox-container">
-                            <input type="checkbox" id="audio-color" checked>
-                            <label for="audio-color">Sound affects colors</label>
-                        </div>
-                        
-                        <div class="checkbox-container">
-                            <input type="checkbox" id="audio-burst" checked>
-                            <label for="audio-burst">Sound triggers bursts</label>
-                        </div>
-                        
-                        <div class="checkbox-container">
-                            <input type="checkbox" id="audio-size" checked>
-                            <label for="audio-size">Sound affects size</label>
-                        </div>
-                    </div>
-                    
-                    <div class="slider-container">
-                        <label for="audio-sensitivity">Audio Sensitivity:</label>
-                        <div class="slider-with-value">
-                            <input type="range" id="audio-sensitivity" min="1" max="10" value="5" class="slider">
-                            <span class="slider-value" id="audio-sensitivity-value">5</span>
-                        </div>
-                    </div>
-                    
-                    <div class="slider-container">
-                        <label for="burst-threshold">Burst Sensitivity:</label>
-                        <div class="slider-with-value">
-                            <input type="range" id="burst-threshold" min="1" max="10" value="5" class="slider">
-                            <span class="slider-value" id="burst-threshold-value">5</span>
-                        </div>
                     </div>
                 </div>
                 
@@ -146,6 +152,7 @@
     <script src="js/themes/theme.js"></script>
     <script src="js/themes/snowflake/snowflake.js"></script>
     <script src="js/themes/themeManager.js"></script>
+    <script src="js/themes/audio/audioProcessor.js"></script>
     <script src="js/sketch.js"></script>
     <script src="js/app.js"></script>
 </body>

@@ -5,6 +5,7 @@
 // Global variables
 let canvas;
 let themeManager;
+let audioProcessor;
 let startButton;
 let stopButton;
 let themeSelect;
@@ -31,6 +32,19 @@ let windDirectionSlider;
 let wobbleIntensityValue;
 let windStrengthValue;
 let windDirectionValue;
+
+// Audio control variables
+let micToggleButton;
+let soundThresholdSlider;
+let burstIntensitySlider;
+let burstSizeSlider;
+let colorVariationSlider;
+let soundThresholdValue;
+let burstIntensityValue;
+let burstSizeValue;
+let colorVariationValue;
+let volumeMeter;
+let volumeLevel;
 
 /**
  * p5.js setup function - runs once at the start
@@ -63,12 +77,33 @@ function setup() {
   backgroundColorPicker = document.getElementById('background-color');
   snowflakeColorPicker = document.getElementById('snowflake-color');
   
+  // Get audio control elements
+  micToggleButton = document.getElementById('mic-toggle');
+  soundThresholdSlider = document.getElementById('sound-threshold');
+  burstIntensitySlider = document.getElementById('burst-intensity');
+  burstSizeSlider = document.getElementById('burst-size');
+  colorVariationSlider = document.getElementById('color-variation');
+  soundThresholdValue = document.getElementById('sound-threshold-value');
+  burstIntensityValue = document.getElementById('burst-intensity-value');
+  burstSizeValue = document.getElementById('burst-size-value');
+  colorVariationValue = document.getElementById('color-variation-value');
+  volumeMeter = document.getElementById('volume-meter');
+  volumeLevel = document.getElementById('volume-level');
+  
   // Create canvas that fits the container
   canvas = createCanvas(canvasContainer.offsetWidth, canvasContainer.offsetHeight);
   canvas.parent('canvas-container');
   
   // Initialize theme manager
   themeManager = new ThemeManager();
+  
+  // Initialize audio processor
+  audioProcessor = new AudioProcessor();
+  
+  // Set initial threshold based on slider value (important to do this early)
+  const initialThresholdValue = parseInt(soundThresholdSlider.value);
+  const normalizedThreshold = (100 - initialThresholdValue) / 100 * 0.2;
+  audioProcessor.setThreshold(normalizedThreshold);
   
   // Register available themes
   themeManager.registerTheme('snowflakes', new SnowflakesTheme());
@@ -78,6 +113,9 @@ function setup() {
   
   // Switch to initial theme
   themeManager.switchTheme('snowflakes');
+  
+  // Set up audio detection callback
+  setupAudioDetection();
   
   // Add event listeners
   setupEventListeners();
@@ -96,6 +134,49 @@ function draw() {
     // Update and draw the current theme
     currentTheme.update();
     currentTheme.draw();
+  }
+  
+  // Update audio processor
+  if (audioProcessor && audioProcessor.isEnabled) {
+    const volume = audioProcessor.update();
+    updateVolumeMeter(volume);
+  }
+}
+
+/**
+ * Set up audio detection and link it to the theme
+ */
+function setupAudioDetection() {
+  // Set up callback for when a sound is detected
+  audioProcessor.onSoundDetected((intensity) => {
+    // Get the current theme and create a burst if it's a snowflakes theme
+    const currentTheme = themeManager.getCurrentTheme();
+    if (currentTheme && themeManager.activeThemeId === 'snowflakes' && currentTheme.isRunning) {
+      // Generate a burst at a random position
+      const x = random(width * 0.1, width * 0.9);
+      const y = random(height * 0.1, height * 0.9);
+      currentTheme.createSnowflakeBurst(x, y);
+    }
+  });
+}
+
+/**
+ * Update the volume meter visual
+ */
+function updateVolumeMeter(volume) {
+  if (!volumeLevel) return;
+  
+  // Map volume (0-1) to meter width (0-100%)
+  const percentage = Math.min(100, volume * 100 * 2); // Multiply by 2 to make it more visible
+  volumeLevel.style.width = percentage + '%';
+  
+  // Add color classes based on volume
+  if (percentage > 80) {
+    volumeLevel.className = 'high';
+  } else if (percentage > 40) {
+    volumeLevel.className = 'medium';
+  } else {
+    volumeLevel.className = 'low';
   }
 }
 
@@ -196,13 +277,13 @@ function setupEventListeners() {
   // Fullscreen button
   fullscreenButton.addEventListener('click', toggleFullScreen);
   
-  // Listen for fullscreen change event to handle browser's ESC key exit
+  // Listen for fullscreen change event
   document.addEventListener('fullscreenchange', handleFullscreenChange);
   document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
   document.addEventListener('mozfullscreenchange', handleFullscreenChange);
   document.addEventListener('MSFullscreenChange', handleFullscreenChange);
   
-  // Snowflake count slider
+  // Snowflake controls
   snowflakeCountSlider.addEventListener('input', (event) => {
     const value = parseInt(event.target.value);
     snowflakeCountValue.textContent = value;
@@ -213,7 +294,6 @@ function setupEventListeners() {
     }
   });
   
-  // Snowflake size slider
   snowflakeSizeSlider.addEventListener('input', (event) => {
     const value = parseInt(event.target.value);
     snowflakeSizeValue.textContent = value;
@@ -224,7 +304,6 @@ function setupEventListeners() {
     }
   });
   
-  // Snowflake speed slider
   snowflakeSpeedSlider.addEventListener('input', (event) => {
     const value = parseFloat(event.target.value);
     snowflakeSpeedValue.textContent = value.toFixed(1);
@@ -291,6 +370,74 @@ function setupEventListeners() {
       // Strength doesn't change, just update the direction
       const strength = parseInt(windStrengthSlider.value);
       snowflakesTheme.setWind(strength, direction);
+    }
+  });
+  
+  // Audio Controls
+  
+  // Microphone toggle button
+  micToggleButton.addEventListener('click', async () => {
+    if (!audioProcessor.isEnabled) {
+      // Try to start the microphone
+      const success = await audioProcessor.start();
+      if (success) {
+        micToggleButton.textContent = 'Disable Microphone';
+        micToggleButton.classList.add('active');
+      } else {
+        alert('Could not access the microphone. Please check your browser permissions.');
+      }
+    } else {
+      // Stop the microphone
+      audioProcessor.stop();
+      micToggleButton.textContent = 'Enable Microphone';
+      micToggleButton.classList.remove('active');
+      // Reset volume meter
+      if (volumeLevel) volumeLevel.style.width = '0%';
+    }
+  });
+  
+  // Sound threshold slider
+  soundThresholdSlider.addEventListener('input', (event) => {
+    const value = parseInt(event.target.value);
+    soundThresholdValue.textContent = value;
+    
+    // Reverse the scale so higher slider values = higher sensitivity
+    // 100 = most sensitive (low threshold), 0 = least sensitive (high threshold)
+    const reversedValue = (100 - value) / 100;
+    audioProcessor.setThreshold(reversedValue);
+  });
+  
+  // Burst intensity slider
+  burstIntensitySlider.addEventListener('input', (event) => {
+    const value = parseInt(event.target.value);
+    burstIntensityValue.textContent = value;
+    
+    const snowflakesTheme = themeManager.getTheme('snowflakes');
+    if (snowflakesTheme && themeManager.activeThemeId === 'snowflakes') {
+      snowflakesTheme.setBurstIntensity(value);
+    }
+  });
+  
+  // Burst size slider
+  burstSizeSlider.addEventListener('input', (event) => {
+    const value = parseInt(event.target.value);
+    const multiplier = value / 10;
+    burstSizeValue.textContent = multiplier.toFixed(1);
+    
+    const snowflakesTheme = themeManager.getTheme('snowflakes');
+    if (snowflakesTheme && themeManager.activeThemeId === 'snowflakes') {
+      snowflakesTheme.setBurstSizeMultiplier(multiplier);
+    }
+  });
+  
+  // Color variation slider
+  colorVariationSlider.addEventListener('input', (event) => {
+    const value = parseInt(event.target.value);
+    colorVariationValue.textContent = value;
+    
+    const snowflakesTheme = themeManager.getTheme('snowflakes');
+    if (snowflakesTheme && themeManager.activeThemeId === 'snowflakes') {
+      snowflakesTheme.setBurstColorVariation(value);
     }
   });
 }
