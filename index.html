@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Music Therapy Sensory App</title>
     <link rel="stylesheet" href="styles.css">
-    <!-- p5.js library -->
+    <!-- p5.js libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/addons/p5.sound.min.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -36,6 +37,52 @@
                     <div class="color-picker-container">
                         <label for="snowflake-color">Snowflake Color:</label>
                         <input type="color" id="snowflake-color" value="#FFFFFF">
+                    </div>
+                </div>
+                
+                <!-- Audio Reactivity Section -->
+                <div class="audio-controls">
+                    <h3>Audio Reactivity</h3>
+                    <div class="audio-toggle-container">
+                        <button id="mic-toggle" class="toggle-btn">Enable Microphone</button>
+                    </div>
+                    
+                    <div class="audio-options">
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="audio-wind" checked>
+                            <label for="audio-wind">Sound affects wind</label>
+                        </div>
+                        
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="audio-color" checked>
+                            <label for="audio-color">Sound affects colors</label>
+                        </div>
+                        
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="audio-burst" checked>
+                            <label for="audio-burst">Sound triggers bursts</label>
+                        </div>
+                        
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="audio-size" checked>
+                            <label for="audio-size">Sound affects size</label>
+                        </div>
+                    </div>
+                    
+                    <div class="slider-container">
+                        <label for="audio-sensitivity">Audio Sensitivity:</label>
+                        <div class="slider-with-value">
+                            <input type="range" id="audio-sensitivity" min="1" max="10" value="5" class="slider">
+                            <span class="slider-value" id="audio-sensitivity-value">5</span>
+                        </div>
+                    </div>
+                    
+                    <div class="slider-container">
+                        <label for="burst-threshold">Burst Sensitivity:</label>
+                        <div class="slider-with-value">
+                            <input type="range" id="burst-threshold" min="1" max="10" value="5" class="slider">
+                            <span class="slider-value" id="burst-threshold-value">5</span>
+                        </div>
                     </div>
                 </div>
                 
