@@ -45,15 +45,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         micToggleButton.textContent = 'Disable Microphone';
                         micToggleButton.classList.add('active');
                         
-                        // Set up the sound detection callback
+                        // IMPORTANT: We're completely disabling the callback method and using direct ThemeManager connection only
+                        // This eliminates the double-burst problem in Edge
                         window.edgeAudioProcessor.onSoundDetected(function(intensity) {
-                            console.log(`Edge detected sound! Intensity: ${intensity}`);
-                            
-                            // Only use this callback path if ThemeManager isn't directly available to EdgeAudioProcessor
-                            if (!window.themeManager) {
-                                console.error("ThemeManager not available globally. Falling back to callback.");
-                                // Here you could implement fallback behavior if needed
-                            }
+                            // This callback is now disabled to prevent double triggering
+                            // All sound detection now happens through the direct ThemeManager connection in EdgeAudioProcessor
+                            console.log(`Edge detected sound! Intensity: ${intensity} (callback disabled)`);
                         });
                         
                         // Set initial threshold from the slider

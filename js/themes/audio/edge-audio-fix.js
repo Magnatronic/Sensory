@@ -161,15 +161,13 @@ class EdgeAudioProcessor {
                     this.lastTriggerTime = now;
                     const intensity = Math.min(1, relativeVolume * 5);
                     
-                    // Use direct connection to ThemeManager if available
+                    // ONLY use direct connection to ThemeManager - no more callback path
                     if (window.themeManager) {
-                        console.log("EdgeAudioProcessor: Directly calling ThemeManager.onSoundDetected()");
+                        console.log(`EdgeAudioProcessor: Sound triggered with intensity ${intensity.toFixed(2)}`);
                         window.themeManager.onSoundDetected(intensity);
-                    }
-                    // Only use callback if ThemeManager isn't available
-                    else if (this.callbackFunction) {
-                        console.log("EdgeAudioProcessor: ThemeManager not available, using callback");
-                        this.callbackFunction(intensity);
+                    } else {
+                        console.error("EdgeAudioProcessor: ThemeManager not available globally. Sound detection failed.");
+                        // We're no longer using the callback as a fallback to avoid double-triggering
                     }
                 }
             }
