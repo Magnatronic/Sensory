@@ -49,10 +49,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         window.edgeAudioProcessor.onSoundDetected(function(intensity) {
                             console.log(`Edge detected sound! Intensity: ${intensity}`);
                             
-                            // Get the current theme manager from the global scope
+                            // Access ThemeManager from the global scope
                             if (window.themeManager) {
-                                // Trigger a sound event in the theme manager
+                                console.log(`Forwarding sound to ThemeManager with intensity: ${intensity}`);
                                 window.themeManager.onSoundDetected(intensity);
+                            } else {
+                                console.error("ThemeManager not available globally. Sound detection failed.");
                             }
                         });
                         

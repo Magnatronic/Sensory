@@ -97,8 +97,14 @@ function setup() {
   // Initialize theme manager
   themeManager = new ThemeManager();
   
+  // Make theme manager globally accessible for Edge audio detection
+  window.themeManager = themeManager;
+  
   // Initialize audio processor
   audioProcessor = new AudioProcessor();
+  
+  // Make audio processor globally accessible
+  window.audioProcessor = audioProcessor;
   
   // Set initial threshold based on slider value (important to do this early)
   const initialThresholdValue = parseInt(soundThresholdSlider.value);
