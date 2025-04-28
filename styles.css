@@ -327,3 +327,85 @@ input[type="color"]::-webkit-color-swatch {
     border: none;
     border-radius: 4px;
 }
+
+/* Microphone permission overlay */
+.permission-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Arial, sans-serif;
+}
+
+.permission-box {
+    background-color: #333;
+    border: 2px solid #2a5ca8;
+    border-radius: 8px;
+    padding: 25px;
+    max-width: 500px;
+    width: 90%;
+    color: white;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.permission-box h3 {
+    margin-top: 0;
+    color: #fff;
+    border-bottom: 1px solid #2a5ca8;
+    padding-bottom: 10px;
+    font-size: 18px;
+}
+
+.permission-box p {
+    margin: 15px 0;
+    line-height: 1.5;
+    font-size: 14px;
+}
+
+.permission-box ol {
+    margin: 15px 0;
+    padding-left: 20px;
+    line-height: 1.5;
+    font-size: 14px;
+}
+
+.permission-image {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.permission-image svg {
+    width: 60px;
+    height: auto;
+}
+
+#request-permission-btn, #close-permission-btn {
+    background-color: #2a5ca8;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 15px;
+    font-size: 16px;
+    width: 100%;
+    transition: background-color 0.2s;
+}
+
+#request-permission-btn:hover, #close-permission-btn:hover {
+    background-color: #3470cc;
+}
+
+#close-permission-btn {
+    background-color: #555;
+}
+
+#close-permission-btn:hover {
+    background-color: #666;
+}
