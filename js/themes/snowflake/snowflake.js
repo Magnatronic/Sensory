@@ -368,6 +368,37 @@ class SnowflakesTheme extends Theme {
     setBurstColorVariation(variation) {
         this.burstColorVariation = variation;
     }
+    
+    /**
+     * Handles sound detection to create snowflake bursts
+     * Called by ThemeManager when a sound is detected
+     * @param {number} intensity - Sound intensity from 0-1
+     */
+    onSoundDetected(intensity) {
+        console.log(`SnowflakesTheme: Creating snowflake burst with intensity ${intensity}`);
+        
+        if (!this.isRunning || !this.canvas) {
+            console.warn("SnowflakesTheme: Theme not running, cannot create burst");
+            return;
+        }
+        
+        // Scale burst intensity based on sound intensity
+        const scaledBurstIntensity = Math.floor(this.burstIntensity * intensity);
+        
+        // Store current burst intensity
+        const originalBurstIntensity = this.burstIntensity;
+        
+        // Temporarily set the burst intensity based on sound
+        this.burstIntensity = Math.max(5, scaledBurstIntensity);
+        
+        // Create a burst at a random position
+        const x = this.canvas.random(this.canvas.width * 0.2, this.canvas.width * 0.8);
+        const y = this.canvas.random(this.canvas.height * 0.3, this.canvas.height * 0.7);
+        this.createSnowflakeBurst(x, y);
+        
+        // Restore original burst intensity
+        this.burstIntensity = originalBurstIntensity;
+    }
 
     update() {
         if (!this.isRunning) return;

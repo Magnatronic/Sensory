@@ -100,4 +100,25 @@ class ThemeManager {
         }
         return false;
     }
+
+    /**
+     * Handle sound detection from any audio processor
+     * @param {number} intensity - Sound intensity (0-1)
+     */
+    onSoundDetected(intensity) {
+        console.log(`ThemeManager: Sound detected with intensity ${intensity}`);
+        if (this.currentTheme && typeof this.currentTheme.onSoundDetected === 'function') {
+            this.currentTheme.onSoundDetected(intensity);
+        }
+    }
+
+    /**
+     * Set the burst intensity for the current theme
+     * @param {number} value - Burst intensity value
+     */
+    setBurstIntensity(value) {
+        if (this.currentTheme && typeof this.currentTheme.setBurstIntensity === 'function') {
+            this.currentTheme.setBurstIntensity(value);
+        }
+    }
 }
