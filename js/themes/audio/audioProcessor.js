@@ -28,6 +28,15 @@ class AudioProcessor {
         
         // Permission status tracking
         this.permissionGranted = false;
+        
+        // Get browser info from BrowserPermissions module if available
+        this.isEdge = window.isMicrosoftEdge || navigator.userAgent.indexOf("Edg") !== -1 || navigator.userAgent.indexOf("Edge") !== -1;
+        this.isChrome = window.isChromeBrowser || (navigator.userAgent.indexOf("Chrome") !== -1 && 
+                        navigator.userAgent.indexOf("Edg") === -1 && 
+                        navigator.userAgent.indexOf("Edge") === -1);
+        this.isFirefox = window.isFirefoxBrowser || navigator.userAgent.indexOf("Firefox") !== -1;
+        
+        console.log(`AudioProcessor: Browser detected: ${this.isEdge ? 'Microsoft Edge' : this.isChrome ? 'Chrome' : this.isFirefox ? 'Firefox' : 'Other browser'}`);
     }
 
     /**
@@ -132,6 +141,12 @@ class AudioProcessor {
             console.log("Starting microphone in " + 
                 (this.isEdge ? "Edge" : this.isChrome ? "Chrome" : this.isFirefox ? "Firefox" : "Other browser"));
             
+            // Check if BrowserPermissions already got a stream we can use (for Edge)
+            if (this.isEdge && window.edgeAudioStream) {
+                console.log("AudioProcessor: Using existing audio stream from BrowserPermissions");
+                // The permission has already been handled, just continue setup
+            }
+            
             // Special handling for Edge - explicitly check and request permissions
             if (this.isEdge) {
                 console.log("Edge detected, explicitly checking microphone permissions");
@@ -144,7 +159,7 @@ class AudioProcessor {
                     if (permResult.state === 'denied') {
                         alert("Microphone access is blocked. Please click the camera/lock icon in the address bar, select 'Site permissions', and allow microphone access.");
                         return false;
-                    } else if (permResult.state === 'prompt') {
+                    } else if (permResult.state === 'prom pt') {
                         // Show a custom permission prompt for better UX
                         this.showPermissionPrompt();
                         return true; // The actual mic start will happen after permission is granted
@@ -269,8 +284,8 @@ class AudioProcessor {
         // Get current volume (0-1)
         const rawVolume = this.analyzer.getLevel();
         
-        // Edge-specific debugging - log more audio data for Edge
-        if (this.isEdge && rawVolume > 0.02) { // Only log when there's actual sound
+        // Edge-specific debugging - log all volume levels periodically
+        if (this.isEdge && Math.random() < 0.02) { // Log ~2% of frames
             console.log(`Edge audio level: ${rawVolume.toFixed(4)}, threshold: ${this.threshold.toFixed(4)}`);
         }
         
