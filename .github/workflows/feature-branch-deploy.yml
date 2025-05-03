@@ -1,9 +1,9 @@
-name: Deploy Feature Branch to GitHub Pages
+name: Deploy Feature Branches to GitHub Pages
 
 on:
   push:
     branches:
-      - feature/restructure
+      - 'feature/**'  # This will match any branch that starts with "feature/"
 
 jobs:
   deploy:
@@ -11,9 +11,17 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
+      - name: Extract branch name
+        shell: bash
+        run: echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | sed 's/\//_/g')" >> $GITHUB_ENV
+      
+      - name: Get folder name from branch
+        shell: bash
+        run: echo "FOLDER_NAME=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_ENV
+      
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: .
           branch: gh-pages
-          target-folder: feature/restructure
+          target-folder: ${{ env.FOLDER_NAME }}
