@@ -6,6 +6,13 @@ on:
       - '**'
       - '!main'
 
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+  issues: write
+  pull-requests: write
+
 jobs:
   deploy-preview:
     runs-on: ubuntu-latest
@@ -13,6 +20,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Fetch all history for proper branch info
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -34,6 +43,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./
           destination_dir: preview/${{ steps.subdomain.outputs.branch }}
+          force_orphan: false
           
       - name: Comment on commit with preview URL
         uses: actions/github-script@v6
