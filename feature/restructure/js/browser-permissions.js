@@ -92,7 +92,7 @@ export class BrowserPermissions {
         const support = {
             webAudioAPI: !!(window.AudioContext || window.webkitAudioContext),
             getUserMedia: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
-            audioWorklet: !!(window.AudioContext && AudioContext.prototype.audioWorklet),
+            audioWorklet: !!(window.AudioContext && window.AudioContext.prototype.audioWorklet),
             permissions: !!(navigator.permissions && navigator.permissions.query),
             mediaCapabilities: !!(navigator.mediaCapabilities),
         };
@@ -122,41 +122,26 @@ export class BrowserPermissions {
         const ua = navigator.userAgent;
         const isChromium = /Chrome/.test(ua) && /Google Inc/.test(navigator.vendor);
         const isEdge = /Edg/.test(ua);
+        const isFirefox = /Firefox/.test(ua);
         
-        console.debug(`🔐 BrowserPermissions: User agent info - Chromium: ${isChromium}, Edge: ${isEdge}`);
+        console.debug(`🔐 BrowserPermissions: User agent info - Chromium: ${isChromium}, Edge: ${isEdge}, Firefox: ${isFirefox}`);
         
-        // Check for common indicators of enhanced privacy modes
+        // Create privacy detection results without attempting to create AudioContext
         const result = {
             isPrivacyFocused: false,
             possibleIssues: [],
             browserInfo: {
                 userAgent: ua,
                 isChromium,
-                isEdge
+                isEdge,
+                isFirefox
             }
         };
         
-        // Check for common signal blockers or privacy extensions
-        try {
-            if (isChromium || isEdge) {
-                console.debug('🔐 BrowserPermissions: Testing for Chromium/Edge privacy restrictions');
-                // Test if AudioContext is heavily restricted
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                if (audioCtx.state === 'suspended' && !audioCtx.resume) {
-                    console.debug('🔐 BrowserPermissions: Detected restricted audio context (suspended state)');
-                    result.isPrivacyFocused = true;
-                    result.possibleIssues.push('restricted-audio-context');
-                } else {
-                    console.debug(`🔐 BrowserPermissions: AudioContext initial state: ${audioCtx.state}`);
-                }
-                audioCtx.close().catch(() => {
-                    console.debug('🔐 BrowserPermissions: Error closing test AudioContext');
-                });
-            }
-        } catch (e) {
-            console.debug('🔐 BrowserPermissions: Exception during privacy detection:', e);
-            result.isPrivacyFocused = true;
-            result.possibleIssues.push('audio-context-blocked');
+        // Modern browsers generally require user interaction for audio
+        if (isChromium || isEdge || isFirefox) {
+            console.debug('🔐 BrowserPermissions: Modern browser detected, assuming autoplay restrictions');
+            result.possibleIssues.push('audio-autoplay-restricted');
         }
         
         console.debug('🔐 BrowserPermissions: Privacy mode detection results:', result);
