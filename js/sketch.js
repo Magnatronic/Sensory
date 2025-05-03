@@ -89,6 +89,49 @@ let isRunning = false;
 let lastFrameTime = 0;
 let frameTimeDelta = 0;
 let currentTheme = null;
+let audioContextInitialized = false;
+
+/**
+ * Initialize p5.js sound with user's audio context
+ */
+function initializeP5Sound() {
+    if (audioContextInitialized) return;
+    
+    debug('init', 'Initializing p5.js sound with shared audio context');
+    
+    // Use the globally initialized audio context if available
+    if (window._audioContext) {
+        try {
+            // Set p5.js to use our pre-created audio context
+            p5.prototype.getAudioContext = function() {
+                return window._audioContext;
+            };
+            
+            debug('init', 'Successfully shared audio context with p5.sound');
+            audioContextInitialized = true;
+            
+            // Listen for audio context events
+            eventBus.on('audio-context-ready', (data) => {
+                debug('init', 'Audio context ready event received');
+                audioContextInitialized = true;
+                
+                // If theme needs audio, initialize it now
+                if (currentTheme && typeof currentTheme.initializeAudio === 'function') {
+                    debug('init', 'Initializing theme audio');
+                    currentTheme.initializeAudio(data.audioContext);
+                }
+            });
+            
+            return true;
+        } catch (error) {
+            logError('init', 'Failed to initialize p5.sound with shared audio context:', error);
+            return false;
+        }
+    } else {
+        debug('init', 'No shared audio context available yet');
+        return false;
+    }
+}
 
 /**
  * p5.js setup function - runs once at the beginning
@@ -109,6 +152,9 @@ window.setup = function() {
     canvas.parent('canvas-container');
     
     debug('init', `Canvas created with dimensions: ${canvasWidth}x${canvasHeight}`);
+    
+    // Initialize p5.sound if audio context is ready
+    initializeP5Sound();
     
     // Initialize the first theme
     initializeTheme();
