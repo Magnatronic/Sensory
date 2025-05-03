@@ -1,481 +1,465 @@
 /**
- * Main p5.js sketch file
+ * Main sketch file for the p5.js sensory application
+ * Manages the canvas, animation loop, and rendering
  */
+import { eventBus } from './core/event-bus.js';
+import { settingsManager } from './core/app-config.js';
+import { stateMachine, AppStates } from './core/state-machine.js';
+import { themeManager } from './themes/themeManager.js';
 
-// Global variables
+// Debug configuration for sketch.js
+const DEBUG = {
+    init: true,          // Initialization logs
+    draw: false,         // Draw loop logs (high frequency, disabled by default)
+    event: true,         // Event handling logs
+    performance: true,   // Performance metrics logs
+    theme: true,         // Theme-related logs
+    audio: true,         // Audio interaction logs
+    resize: true,        // Window/canvas resize logs
+    error: true          // Error logs
+};
+
+// Debug utility functions
+function debug(category, ...args) {
+    if (DEBUG[category]) {
+        console.log(`%c[Sketch:${category}]`, 'color: #ff9966; font-weight: bold', ...args);
+    }
+}
+
+function logError(category, ...args) {
+    if (DEBUG.error) {
+        console.error(`%c[Sketch:${category}:ERROR]`, 'color: #ff3860; font-weight: bold', ...args);
+    }
+}
+
+// Performance monitoring
+const performanceMetrics = {
+    fps: 0,
+    frameTime: 0,
+    minFrameTime: Number.MAX_VALUE,
+    maxFrameTime: 0,
+    avgFrameTime: 0,
+    frameCount: 0,
+    lastFpsUpdate: 0,
+    frameTimeSamples: []
+};
+
+// Update performance metrics in a throttled way to avoid performance impact
+function updatePerformanceMetrics(frameTime) {
+    // New frame time sample
+    performanceMetrics.frameTimeSamples.push(frameTime);
+    if (performanceMetrics.frameTimeSamples.length > 60) {
+        performanceMetrics.frameTimeSamples.shift();
+    }
+    
+    // Calculate metrics
+    performanceMetrics.frameCount++;
+    performanceMetrics.frameTime = frameTime;
+    performanceMetrics.minFrameTime = Math.min(performanceMetrics.minFrameTime, frameTime);
+    performanceMetrics.maxFrameTime = Math.max(performanceMetrics.maxFrameTime, frameTime);
+    
+    // Calculate average
+    const sum = performanceMetrics.frameTimeSamples.reduce((a, b) => a + b, 0);
+    performanceMetrics.avgFrameTime = sum / performanceMetrics.frameTimeSamples.length;
+    
+    // Calculate FPS (throttled to once per second to avoid excessive calculations)
+    const now = performance.now();
+    if (now - performanceMetrics.lastFpsUpdate > 1000) {
+        performanceMetrics.fps = Math.round(1000 / performanceMetrics.avgFrameTime);
+        performanceMetrics.lastFpsUpdate = now;
+        
+        // Log performance metrics if enabled
+        if (DEBUG.performance) {
+            debug('performance', {
+                fps: performanceMetrics.fps,
+                avgFrameTime: performanceMetrics.avgFrameTime.toFixed(2) + 'ms',
+                minFrameTime: performanceMetrics.minFrameTime.toFixed(2) + 'ms',
+                maxFrameTime: performanceMetrics.maxFrameTime.toFixed(2) + 'ms'
+            });
+        }
+    }
+}
+
+// Global sketch variables
 let canvas;
-let themeManager;
-let audioProcessor;
-let startButton;
-let stopButton;
-let themeSelect;
 let canvasContainer;
-let fullscreenButton;
-let isFullscreen = false;
-
-// Slider control variables
-let snowflakeCountSlider;
-let snowflakeSizeSlider;
-let snowflakeSpeedSlider;
-let snowflakeCountValue;
-let snowflakeSizeValue;
-let snowflakeSpeedValue;
-
-// Color picker variables
-let backgroundColorPicker;
-let snowflakeColorPicker;
-
-// New control variables for wobble and wind
-let wobbleIntensitySlider;
-let windStrengthSlider;
-let windDirectionSlider;
-let wobbleIntensityValue;
-let windStrengthValue;
-let windDirectionValue;
-
-// Audio control variables
-let micToggleButton;
-let soundThresholdSlider;
-let burstIntensitySlider;
-let burstSizeSlider;
-let colorVariationSlider;
-let soundThresholdValue;
-let burstIntensityValue;
-let burstSizeValue;
-let colorVariationValue;
-let volumeMeter;
-let volumeLevel;
+let canvasWidth;
+let canvasHeight;
+let isRunning = false;
+let lastFrameTime = 0;
+let frameTimeDelta = 0;
+let currentTheme = null;
 
 /**
- * p5.js setup function - runs once at the start
+ * p5.js setup function - runs once at the beginning
  */
-function setup() {
-  // Get DOM elements
-  canvasContainer = document.getElementById('canvas-container');
-  startButton = document.getElementById('start-btn');
-  stopButton = document.getElementById('stop-btn');
-  themeSelect = document.getElementById('theme-select');
-  fullscreenButton = document.getElementById('fullscreen-btn');
-  
-  // Get slider elements
-  snowflakeCountSlider = document.getElementById('snowflake-count');
-  snowflakeSizeSlider = document.getElementById('snowflake-size');
-  snowflakeSpeedSlider = document.getElementById('snowflake-speed');
-  snowflakeCountValue = document.getElementById('snowflake-count-value');
-  snowflakeSizeValue = document.getElementById('snowflake-size-value');
-  snowflakeSpeedValue = document.getElementById('snowflake-speed-value');
-  
-  // Get new slider elements for wobble and wind
-  wobbleIntensitySlider = document.getElementById('wobble-intensity');
-  windStrengthSlider = document.getElementById('wind-strength');
-  windDirectionSlider = document.getElementById('wind-direction');
-  wobbleIntensityValue = document.getElementById('wobble-intensity-value');
-  windStrengthValue = document.getElementById('wind-strength-value');
-  windDirectionValue = document.getElementById('wind-direction-value');
-  
-  // Get color picker elements
-  backgroundColorPicker = document.getElementById('background-color');
-  snowflakeColorPicker = document.getElementById('snowflake-color');
-  
-  // Get audio control elements
-  micToggleButton = document.getElementById('mic-toggle');
-  soundThresholdSlider = document.getElementById('sound-threshold');
-  burstIntensitySlider = document.getElementById('burst-intensity');
-  burstSizeSlider = document.getElementById('burst-size');
-  colorVariationSlider = document.getElementById('color-variation');
-  soundThresholdValue = document.getElementById('sound-threshold-value');
-  burstIntensityValue = document.getElementById('burst-intensity-value');
-  burstSizeValue = document.getElementById('burst-size-value');
-  colorVariationValue = document.getElementById('color-variation-value');
-  volumeMeter = document.getElementById('volume-meter');
-  volumeLevel = document.getElementById('volume-level');
-  
-  // Create canvas that fits the container
-  canvas = createCanvas(canvasContainer.offsetWidth, canvasContainer.offsetHeight);
-  canvas.parent('canvas-container');
-  
-  // Initialize theme manager
-  themeManager = new ThemeManager();
-  
-  // Make theme manager globally accessible for Edge audio detection
-  window.themeManager = themeManager;
-  
-  // Initialize audio processor
-  audioProcessor = new AudioProcessor();
-  
-  // Make audio processor globally accessible
-  window.audioProcessor = audioProcessor;
-  
-  // Set initial threshold based on slider value (important to do this early)
-  const initialThresholdValue = parseInt(soundThresholdSlider.value);
-  const normalizedThreshold = (100 - initialThresholdValue) / 100 * 0.2;
-  audioProcessor.setThreshold(normalizedThreshold);
-  
-  // Register available themes
-  themeManager.registerTheme('snowflakes', new SnowflakesTheme());
-  
-  // Initialize all themes
-  themeManager.initThemes(this);
-  
-  // Switch to initial theme
-  themeManager.switchTheme('snowflakes');
-  
-  // Set up audio detection callback
-  setupAudioDetection();
-  
-  // Add event listeners
-  setupEventListeners();
-  
-  // Set frame rate to 30 for smooth animation without being too resource intensive
-  frameRate(30);
-}
-
-/**
- * p5.js draw function - runs continuously after setup
- */
-function draw() {
-  const currentTheme = themeManager.getCurrentTheme();
-  
-  if (currentTheme) {
-    // Update and draw the current theme
-    currentTheme.update();
-    currentTheme.draw();
-  }
-  
-  // Update audio processor
-  if (audioProcessor && audioProcessor.isEnabled) {
-    const volume = audioProcessor.update();
-    updateVolumeMeter(volume);
-  }
-}
-
-/**
- * Set up audio detection and link it to the theme
- */
-function setupAudioDetection() {
-  // Set up callback for when a sound is detected
-  audioProcessor.onSoundDetected((intensity) => {
-    // Get the current theme and create a burst if it's a snowflakes theme
-    const currentTheme = themeManager.getCurrentTheme();
-    if (currentTheme && themeManager.activeThemeId === 'snowflakes' && currentTheme.isRunning) {
-      // Generate a burst at a random position
-      const x = random(width * 0.1, width * 0.9);
-      const y = random(height * 0.1, height * 0.9);
-      currentTheme.createSnowflakeBurst(x, y);
+window.setup = function() {
+    debug('init', 'Setting up p5.js sketch');
+    
+    // Get canvas container dimensions
+    canvasContainer = document.getElementById('canvas-container');
+    if (!canvasContainer) {
+        logError('init', 'Canvas container element not found!');
+        return;
     }
-  });
+    
+    // Create the canvas with appropriate dimensions
+    updateCanvasDimensions();
+    canvas = createCanvas(canvasWidth, canvasHeight);
+    canvas.parent('canvas-container');
+    
+    debug('init', `Canvas created with dimensions: ${canvasWidth}x${canvasHeight}`);
+    
+    // Initialize the first theme
+    initializeTheme();
+    
+    // Setup resize listener
+    window.addEventListener('resize', handleWindowResize);
+    debug('init', 'Window resize handler attached');
+    
+    // Listen for events
+    setupEventListeners();
+    
+    // Setup complete
+    debug('init', 'p5.js setup complete');
+    eventBus.emit('sketch-initialized');
+};
+
+/**
+ * Update canvas dimensions based on container size
+ */
+function updateCanvasDimensions() {
+    if (!canvasContainer) return;
+    
+    const rect = canvasContainer.getBoundingClientRect();
+    canvasWidth = rect.width;
+    canvasHeight = rect.height;
+    
+    debug('resize', `Canvas dimensions updated: ${canvasWidth}x${canvasHeight}`);
 }
 
 /**
- * Update the volume meter visual
+ * Handle window resize events
  */
-function updateVolumeMeter(volume) {
-  if (!volumeLevel) return;
-  
-  // Map volume (0-1) to meter width (0-100%)
-  const percentage = Math.min(100, volume * 100 * 2); // Multiply by 2 to make it more visible
-  volumeLevel.style.width = percentage + '%';
-  
-  // Add color classes based on volume
-  if (percentage > 80) {
-    volumeLevel.className = 'high';
-  } else if (percentage > 40) {
-    volumeLevel.className = 'medium';
-  } else {
-    volumeLevel.className = 'low';
-  }
-}
-
-/**
- * p5.js windowResized function - runs when window is resized
- */
-function windowResized() {
-  // Resize canvas to fit container
-  if (isFullscreen) {
-    // In fullscreen mode, use window dimensions directly
-    resizeCanvas(window.innerWidth, window.innerHeight);
-  } else {
-    // In normal mode, use container dimensions
-    resizeCanvas(canvasContainer.offsetWidth, canvasContainer.offsetHeight);
-  }
-}
-
-/**
- * Toggle fullscreen mode
- */
-function toggleFullScreen() {
-  if (!isFullscreen) {
-    // If browser supports native fullscreen API
-    if (canvasContainer.requestFullscreen) {
-      canvasContainer.requestFullscreen();
-    } else if (canvasContainer.webkitRequestFullscreen) { // Safari
-      canvasContainer.webkitRequestFullscreen();
-    } else if (canvasContainer.msRequestFullscreen) { // IE11
-      canvasContainer.msRequestFullscreen();
+function handleWindowResize() {
+    debug('resize', 'Window resize detected');
+    
+    // Update dimensions
+    updateCanvasDimensions();
+    
+    // Resize the canvas
+    resizeCanvas(canvasWidth, canvasHeight);
+    
+    // Notify current theme of resize
+    if (currentTheme) {
+        debug('resize', 'Notifying theme of canvas resize');
+        currentTheme.handleResize(canvasWidth, canvasHeight);
     }
-
-    // Add fullscreen class for CSS styling
-    document.body.classList.add('fullscreen-active');
-    fullscreenButton.textContent = "Exit Full Screen";
     
-    // Set flag before resizing
-    isFullscreen = true;
-    
-    // Force immediate resize to fill the screen
-    setTimeout(() => {
-      resizeCanvas(window.innerWidth, window.innerHeight);
-    }, 100);
-  } else {
-    // Exit fullscreen
-    if (document.exitFullscreen) {
-      document.exitFullscreen();
-    } else if (document.webkitExitFullscreen) { // Safari
-      document.webkitExitFullscreen();
-    } else if (document.msExitFullscreen) { // IE11
-      document.msExitFullscreen();
-    }
-
-    // Remove fullscreen class
-    document.body.classList.remove('fullscreen-active');
-    fullscreenButton.textContent = "Full Screen";
-    
-    // Set flag before resizing
-    isFullscreen = false;
-    
-    // Allow time for transition before resizing
-    setTimeout(() => {
-      resizeCanvas(canvasContainer.offsetWidth, canvasContainer.offsetHeight);
-    }, 100);
-  }
+    // Emit resize event
+    eventBus.emit('canvas-resized', { width: canvasWidth, height: canvasHeight });
 }
 
 /**
- * Setup all event listeners for UI controls
+ * Initialize the active theme
+ */
+function initializeTheme() {
+    try {
+        debug('theme', 'Initializing theme');
+        
+        // Get theme from settings or use default
+        const themeName = settingsManager.get('theme.current', 'snowflakes');
+        debug('theme', `Loading theme: ${themeName}`);
+        
+        // Get theme instance from theme manager
+        currentTheme = themeManager.getTheme(themeName);
+        
+        if (!currentTheme) {
+            logError('theme', `Failed to load theme: ${themeName}, falling back to snowflakes`);
+            currentTheme = themeManager.getTheme('snowflakes');
+        }
+        
+        // Initialize the theme with the canvas dimensions
+        currentTheme.initialize(canvasWidth, canvasHeight);
+        debug('theme', 'Theme initialized successfully');
+        
+        // Emit theme changed event
+        eventBus.emit('theme-initialized', { themeName });
+    } catch (error) {
+        logError('theme', 'Error initializing theme:', error);
+        eventBus.emit('sketch-error', { 
+            type: 'theme-initialization',
+            error
+        });
+    }
+}
+
+/**
+ * Setup event listeners for communication with other components
  */
 function setupEventListeners() {
-  // Start button
-  startButton.addEventListener('click', () => {
-    themeManager.startCurrentTheme();
-    startButton.disabled = true;
-    stopButton.disabled = false;
-  });
-  
-  // Stop button
-  stopButton.addEventListener('click', () => {
-    themeManager.stopCurrentTheme();
-    stopButton.disabled = true;
-    startButton.disabled = false;
-  });
-  
-  // Theme select
-  themeSelect.addEventListener('change', (event) => {
-    const themeId = event.target.value;
-    const wasRunning = themeManager.getCurrentTheme() && themeManager.getCurrentTheme().isRunning;
+    debug('event', 'Setting up event listeners');
     
-    themeManager.switchTheme(themeId);
+    // Theme change events
+    eventBus.on('theme-changed', (data) => {
+        debug('theme', `Theme change requested: ${data.themeName}`);
+        
+        try {
+            // Get new theme
+            const newTheme = themeManager.getTheme(data.themeName);
+            
+            if (!newTheme) {
+                logError('theme', `Failed to load requested theme: ${data.themeName}`);
+                eventBus.emit('theme-change-failed', { themeName: data.themeName });
+                return;
+            }
+            
+            // Initialize the new theme
+            newTheme.initialize(canvasWidth, canvasHeight);
+            
+            // Store previous theme for cleanup
+            const prevTheme = currentTheme;
+            
+            // Set new theme
+            currentTheme = newTheme;
+            debug('theme', `Theme changed to: ${data.themeName}`);
+            
+            // Clean up previous theme
+            if (prevTheme) {
+                debug('theme', 'Cleaning up previous theme');
+                prevTheme.cleanup();
+            }
+            
+            // Save setting
+            settingsManager.set('theme.current', data.themeName);
+            
+            // Emit theme changed event
+            eventBus.emit('theme-changed-complete', { 
+                themeName: data.themeName,
+                previousTheme: prevTheme ? prevTheme.name : null
+            });
+        } catch (error) {
+            logError('theme', 'Error changing theme:', error);
+            eventBus.emit('theme-change-failed', { 
+                themeName: data.themeName,
+                error
+            });
+        }
+    });
     
-    // If the previous theme was running, start the new one
-    if (wasRunning) {
-      themeManager.startCurrentTheme();
-    }
-  });
-  
-  // Fullscreen button
-  fullscreenButton.addEventListener('click', toggleFullScreen);
-  
-  // Listen for fullscreen change event
-  document.addEventListener('fullscreenchange', handleFullscreenChange);
-  document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-  document.addEventListener('mozfullscreenchange', handleFullscreenChange);
-  document.addEventListener('MSFullscreenChange', handleFullscreenChange);
-  
-  // Snowflake controls
-  snowflakeCountSlider.addEventListener('input', (event) => {
-    const value = parseInt(event.target.value);
-    snowflakeCountValue.textContent = value;
+    // Sound detection events
+    eventBus.on('sound-detected', (intensity) => {
+        if (DEBUG.audio) {
+            debug('audio', `Sound detected with intensity: ${intensity.toFixed(2)}`);
+        }
+        
+        // Only trigger theme reaction if sketch is running
+        if (isRunning && currentTheme) {
+            try {
+                currentTheme.reactToSound(intensity);
+            } catch (error) {
+                logError('audio', 'Error in theme sound reaction:', error);
+            }
+        }
+    });
     
-    const snowflakesTheme = themeManager.getTheme('snowflakes');
-    if (snowflakesTheme && themeManager.activeThemeId === 'snowflakes') {
-      snowflakesTheme.setNumberOfSnowflakes(value);
-    }
-  });
-  
-  snowflakeSizeSlider.addEventListener('input', (event) => {
-    const value = parseInt(event.target.value);
-    snowflakeSizeValue.textContent = value;
+    // Application state changes
+    eventBus.on('state-changed', (data) => {
+        debug('event', `Application state changed: ${data.from} -> ${data.to}`);
+        
+        // React to state changes
+        handleStateChange(data.to, data.from);
+    });
     
-    const snowflakesTheme = themeManager.getTheme('snowflakes');
-    if (snowflakesTheme && themeManager.activeThemeId === 'snowflakes') {
-      snowflakesTheme.setSizeMultiplier(value / 10); // Convert to a reasonable multiplier
-    }
-  });
-  
-  snowflakeSpeedSlider.addEventListener('input', (event) => {
-    const value = parseFloat(event.target.value);
-    snowflakeSpeedValue.textContent = value.toFixed(1);
-    
-    const snowflakesTheme = themeManager.getTheme('snowflakes');
-    if (snowflakesTheme && themeManager.activeThemeId === 'snowflakes') {
-      snowflakesTheme.setSpeedMultiplier(value);
-    }
-  });
-  
-  // Background color picker
-  backgroundColorPicker.addEventListener('input', (event) => {
-    const hexColor = event.target.value;
-    
-    const snowflakesTheme = themeManager.getTheme('snowflakes');
-    if (snowflakesTheme && themeManager.activeThemeId === 'snowflakes') {
-      snowflakesTheme.setBackgroundColor(hexColor);
-    }
-  });
-  
-  // Snowflake color picker
-  snowflakeColorPicker.addEventListener('input', (event) => {
-    const hexColor = event.target.value;
-    
-    const snowflakesTheme = themeManager.getTheme('snowflakes');
-    if (snowflakesTheme && themeManager.activeThemeId === 'snowflakes') {
-      snowflakesTheme.setSnowflakeColor(hexColor);
-    }
-  });
-  
-  // Wobble intensity slider
-  wobbleIntensitySlider.addEventListener('input', (event) => {
-    const value = parseInt(event.target.value);
-    wobbleIntensityValue.textContent = value;
-    
-    const snowflakesTheme = themeManager.getTheme('snowflakes');
-    if (snowflakesTheme && themeManager.activeThemeId === 'snowflakes') {
-      // Convert range 0-10 to an appropriate intensity value 0-1
-      const intensity = value / 10;
-      snowflakesTheme.setWobbleIntensity(intensity);
-    }
-  });
-  
-  // Wind strength slider
-  windStrengthSlider.addEventListener('input', (event) => {
-    const strength = parseInt(event.target.value);
-    windStrengthValue.textContent = strength;
-    
-    const snowflakesTheme = themeManager.getTheme('snowflakes');
-    if (snowflakesTheme && themeManager.activeThemeId === 'snowflakes') {
-      // Direction doesn't change, just update the strength
-      const direction = parseInt(windDirectionSlider.value);
-      snowflakesTheme.setWind(strength, direction);
-    }
-  });
-  
-  // Wind direction slider
-  windDirectionSlider.addEventListener('input', (event) => {
-    const direction = parseInt(event.target.value);
-    windDirectionValue.textContent = direction + '°';
-    
-    const snowflakesTheme = themeManager.getTheme('snowflakes');
-    if (snowflakesTheme && themeManager.activeThemeId === 'snowflakes') {
-      // Strength doesn't change, just update the direction
-      const strength = parseInt(windStrengthSlider.value);
-      snowflakesTheme.setWind(strength, direction);
-    }
-  });
-  
-  // Audio Controls
-  
-  // Microphone toggle button
-  micToggleButton.addEventListener('click', async () => {
-    if (!audioProcessor.isEnabled) {
-      // Try to start the microphone
-      const success = await audioProcessor.start();
-      if (success) {
-        micToggleButton.textContent = 'Disable Microphone';
-        micToggleButton.classList.add('active');
-      } else {
-        alert('Could not access the microphone. Please check your browser permissions.');
-      }
-    } else {
-      // Stop the microphone
-      audioProcessor.stop();
-      micToggleButton.textContent = 'Enable Microphone';
-      micToggleButton.classList.remove('active');
-      // Reset volume meter
-      if (volumeLevel) volumeLevel.style.width = '0%';
-    }
-  });
-  
-  // Sound threshold slider
-  soundThresholdSlider.addEventListener('input', (event) => {
-    const value = parseInt(event.target.value);
-    soundThresholdValue.textContent = value;
-    
-    // Reverse the scale so higher slider values = higher sensitivity
-    // 100 = most sensitive (low threshold), 0 = least sensitive (high threshold)
-    const reversedValue = (100 - value) / 100;
-    audioProcessor.setThreshold(reversedValue);
-  });
-  
-  // Burst intensity slider
-  burstIntensitySlider.addEventListener('input', (event) => {
-    const value = parseInt(event.target.value);
-    burstIntensityValue.textContent = value;
-    
-    const snowflakesTheme = themeManager.getTheme('snowflakes');
-    if (snowflakesTheme && themeManager.activeThemeId === 'snowflakes') {
-      snowflakesTheme.setBurstIntensity(value);
-    }
-  });
-  
-  // Burst size slider
-  burstSizeSlider.addEventListener('input', (event) => {
-    const value = parseInt(event.target.value);
-    const multiplier = value / 10;
-    burstSizeValue.textContent = multiplier.toFixed(1);
-    
-    const snowflakesTheme = themeManager.getTheme('snowflakes');
-    if (snowflakesTheme && themeManager.activeThemeId === 'snowflakes') {
-      snowflakesTheme.setBurstSizeMultiplier(multiplier);
-    }
-  });
-  
-  // Color variation slider
-  colorVariationSlider.addEventListener('input', (event) => {
-    const value = parseInt(event.target.value);
-    colorVariationValue.textContent = value;
-    
-    const snowflakesTheme = themeManager.getTheme('snowflakes');
-    if (snowflakesTheme && themeManager.activeThemeId === 'snowflakes') {
-      snowflakesTheme.setBurstColorVariation(value);
-    }
-  });
+    // Specific theme settings changes that require theme updates
+    eventBus.on('theme-setting-changed', (data) => {
+        if (DEBUG.theme) {
+            debug('theme', 'Theme setting changed:', data);
+        }
+        
+        if (currentTheme && typeof currentTheme.updateSettings === 'function') {
+            try {
+                currentTheme.updateSettings(data.setting, data.value);
+            } catch (error) {
+                logError('theme', 'Error updating theme setting:', error);
+            }
+        }
+    });
 }
 
 /**
- * Handle fullscreen change event (for when user presses ESC to exit)
+ * Handle application state changes
  */
-function handleFullscreenChange() {
-  // Check if we're in fullscreen mode
-  const fullscreenElement = document.fullscreenElement || 
-                document.webkitFullscreenElement || 
-                document.mozFullScreenElement ||
-                document.msFullscreenElement;
-  
-  isFullscreen = !!fullscreenElement;
-  
-  if (!isFullscreen) {
-    // Update button text and remove class
-    document.body.classList.remove('fullscreen-active');
-    fullscreenButton.textContent = "Full Screen";
+function handleStateChange(newState, oldState) {
+    debug('event', `Handling state change in sketch: ${oldState} -> ${newState}`);
     
-    // Resize with a small delay to ensure container has settled
-    setTimeout(() => {
-      resizeCanvas(canvasContainer.offsetWidth, canvasContainer.offsetHeight);
-    }, 100);
-  } else {
-    document.body.classList.add('fullscreen-active');
-    fullscreenButton.textContent = "Exit Full Screen";
-    
-    // Resize with a small delay to ensure fullscreen is complete
-    setTimeout(() => {
-      resizeCanvas(window.innerWidth, window.innerHeight);
-    }, 100);
-  }
+    switch (newState) {
+        case AppStates.RUNNING:
+            debug('event', 'Starting sketch');
+            isRunning = true;
+            if (currentTheme) {
+                try {
+                    currentTheme.start();
+                } catch (error) {
+                    logError('event', 'Error starting theme:', error);
+                }
+            }
+            break;
+            
+        case AppStates.PAUSED:
+            debug('event', 'Pausing sketch');
+            isRunning = false;
+            if (currentTheme) {
+                try {
+                    currentTheme.pause();
+                } catch (error) {
+                    logError('event', 'Error pausing theme:', error);
+                }
+            }
+            break;
+            
+        case AppStates.READY:
+            if (oldState === AppStates.RUNNING || oldState === AppStates.PAUSED) {
+                debug('event', 'Stopping sketch');
+                isRunning = false;
+                if (currentTheme) {
+                    try {
+                        currentTheme.stop();
+                    } catch (error) {
+                        logError('event', 'Error stopping theme:', error);
+                    }
+                }
+            }
+            break;
+            
+        case AppStates.ERROR:
+            debug('event', 'Error state entered, stopping sketch');
+            isRunning = false;
+            if (currentTheme) {
+                try {
+                    currentTheme.stop();
+                } catch (error) {
+                    logError('event', 'Error stopping theme after error:', error);
+                }
+            }
+            break;
+    }
 }
+
+/**
+ * p5.js draw function - runs every frame
+ */
+window.draw = function() {
+    // Track frame times for performance monitoring
+    const currentTime = performance.now();
+    frameTimeDelta = currentTime - lastFrameTime;
+    lastFrameTime = currentTime;
+    
+    // Update performance metrics
+    updatePerformanceMetrics(frameTimeDelta);
+    
+    // Extremely throttled draw loop logging to avoid console spam
+    if (DEBUG.draw && Math.random() < 0.001) { // Log roughly 0.1% of frames
+        debug('draw', `Draw loop (dt: ${frameTimeDelta.toFixed(2)}ms, fps: ${performanceMetrics.fps})`);
+    }
+    
+    // Clear the canvas 
+    clear();
+    
+    // Only draw if running and theme exists
+    if (isRunning && currentTheme) {
+        try {
+            // Update and draw the current theme
+            currentTheme.update(frameTimeDelta);
+            currentTheme.draw();
+        } catch (error) {
+            // Handle drawing errors
+            logError('draw', 'Error in theme drawing:', error);
+            
+            // Transition to error state if not already there
+            if (!stateMachine.isInState(AppStates.ERROR)) {
+                stateMachine.transition(AppStates.ERROR, { error });
+            }
+            
+            // Display error message on canvas
+            displayErrorOnCanvas('Error rendering theme', error.message);
+        }
+    } else if (!isRunning && currentTheme) {
+        // For non-running states, just draw a static version
+        try {
+            currentTheme.drawStatic();
+        } catch (error) {
+            logError('draw', 'Error in static theme drawing:', error);
+            displayErrorOnCanvas('Error rendering static view', error.message);
+        }
+    }
+};
+
+/**
+ * Display an error message on the canvas
+ */
+function displayErrorOnCanvas(title, message) {
+    background(25, 0, 0); // Dark red background
+    
+    fill(255);
+    textSize(24);
+    textAlign(CENTER, CENTER);
+    text(title, width/2, height/2 - 40);
+    
+    textSize(16);
+    text(message, width/2, height/2);
+    
+    textSize(14);
+    text('Check the console for more details', width/2, height/2 + 40);
+}
+
+/**
+ * Export functions for external use
+ */
+export const sketch = {
+    // State control
+    start: () => {
+        debug('event', 'External start requested');
+        stateMachine.transition(AppStates.RUNNING);
+    },
+    
+    stop: () => {
+        debug('event', 'External stop requested');
+        stateMachine.transition(AppStates.READY);
+    },
+    
+    pause: () => {
+        debug('event', 'External pause requested');
+        stateMachine.transition(AppStates.PAUSED);
+    },
+    
+    // Theme control
+    changeTheme: (themeName) => {
+        debug('theme', `External theme change requested: ${themeName}`);
+        eventBus.emit('theme-changed', { themeName });
+    },
+    
+    // Debug helpers
+    getPerformanceMetrics: () => {
+        return { ...performanceMetrics };
+    },
+    
+    // Allow setting debug flags at runtime
+    setDebugFlag: (category, value) => {
+        if (category in DEBUG) {
+            debug('event', `Setting debug flag ${category} to ${value}`);
+            DEBUG[category] = value;
+            return true;
+        }
+        return false;
+    },
+    
+    // Log all debug categories and their states
+    logDebugStatus: () => {
+        console.group('%c[Sketch:debug] Debug Categories', 'color: #ff9966; font-weight: bold');
+        Object.entries(DEBUG).forEach(([category, enabled]) => {
+            console.log(`${category}: ${enabled ? 'enabled' : 'disabled'}`);
+        });
+        console.groupEnd();
+    }
+};

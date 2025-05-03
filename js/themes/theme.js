@@ -1,62 +1,69 @@
 /**
- * Base Theme class that all themes should extend
+ * Base Theme class
+ * Defines the interface for all themes
  */
-class Theme {
-    constructor() {
-        this.isRunning = false;
-        this.canvas = null;
-    }
+export class Theme {
+  constructor() {
+    this.p5 = null;
+    this.isRunning = false;
+    this.isInitialized = false;
+  }
 
-    /**
-     * Initialize the theme with a p5.js canvas
-     * @param {p5} canvas - The p5.js instance 
-     */
-    init(canvas) {
-        this.canvas = canvas;
-        this.setup();
-    }
+  /**
+   * Initialize the theme
+   * @param {p5} p5Instance - The p5.js instance
+   */
+  init(p5Instance) {
+    this.p5 = p5Instance;
+    this.isInitialized = true;
+  }
 
-    /**
-     * Setup method to be implemented by child classes
-     */
-    setup() {
-        // To be implemented by child classes
+  /**
+   * Start the theme animation
+   */
+  start() {
+    if (!this.isInitialized) {
+      console.error('Theme not initialized');
+      return false;
     }
+    this.isRunning = true;
+    return true;
+  }
 
-    /**
-     * Start the theme animation
-     */
-    start() {
-        this.isRunning = true;
-    }
+  /**
+   * Stop the theme animation
+   */
+  stop() {
+    this.isRunning = false;
+    return true;
+  }
 
-    /**
-     * Stop the theme animation
-     */
-    stop() {
-        this.isRunning = false;
-    }
+  /**
+   * Update the theme state (called each frame)
+   */
+  update() {
+    // To be implemented by child classes
+  }
 
-    /**
-     * Update method to be called on each frame
-     * Should be implemented by child classes
-     */
-    update() {
-        // To be implemented by child classes
-    }
+  /**
+   * Draw the theme (called each frame)
+   */
+  draw() {
+    // To be implemented by child classes
+  }
 
-    /**
-     * Draw method to be called on each frame
-     * Should be implemented by child classes
-     */
-    draw() {
-        // To be implemented by child classes
-    }
+  /**
+   * Clean up resources
+   */
+  cleanup() {
+    // To be implemented by child classes
+    this.isInitialized = false;
+  }
 
-    /**
-     * Clean up resources when theme is changed or stopped
-     */
-    cleanup() {
-        // To be implemented by child classes if needed
-    }
+  /**
+   * Handle window resize events
+   */
+  resize(width, height) {
+    // To be implemented by child classes
+  }
 }

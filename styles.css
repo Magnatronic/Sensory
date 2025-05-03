@@ -328,7 +328,9 @@ input[type="color"]::-webkit-color-swatch {
     border-radius: 4px;
 }
 
-/* Microphone permission overlay */
+/* Add styles for permission overlay at the end of the file */
+
+/* Permission overlay styles */
 .permission-overlay {
     position: fixed;
     top: 0;
@@ -336,76 +338,59 @@ input[type="color"]::-webkit-color-swatch {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.8);
-    z-index: 10000;
     display: flex;
-    align-items: center;
     justify-content: center;
-    font-family: Arial, sans-serif;
+    align-items: center;
+    z-index: 10000;
 }
 
 .permission-box {
-    background-color: #333;
-    border: 2px solid #2a5ca8;
-    border-radius: 8px;
-    padding: 25px;
-    max-width: 500px;
-    width: 90%;
+    background-color: #1a1a1a;
     color: white;
+    border-radius: 10px;
+    padding: 2rem;
+    max-width: 500px;
+    text-align: center;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    border: 1px solid #333;
 }
 
 .permission-box h3 {
     margin-top: 0;
-    color: #fff;
-    border-bottom: 1px solid #2a5ca8;
-    padding-bottom: 10px;
-    font-size: 18px;
+    color: #4ecca3;
 }
 
 .permission-box p {
-    margin: 15px 0;
+    margin: 1rem 0;
     line-height: 1.5;
-    font-size: 14px;
 }
 
-.permission-box ol {
-    margin: 15px 0;
-    padding-left: 20px;
-    line-height: 1.5;
-    font-size: 14px;
+.permission-box ol, .permission-box ul {
+    text-align: left;
+    margin-bottom: 1.5rem;
+    padding-left: 1.5rem;
+}
+
+.permission-box li {
+    margin-bottom: 0.5rem;
 }
 
 .permission-image {
-    text-align: center;
-    margin: 20px 0;
-}
-
-.permission-image svg {
-    width: 60px;
-    height: auto;
+    margin: 1.5rem 0;
 }
 
 #request-permission-btn, #close-permission-btn {
-    background-color: #2a5ca8;
-    color: white;
+    background-color: #4ecca3;
+    color: #111111;
     border: none;
-    padding: 12px 20px;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
     border-radius: 5px;
     cursor: pointer;
-    margin-top: 15px;
-    font-size: 16px;
-    width: 100%;
     transition: background-color 0.2s;
+    margin-top: 1rem;
 }
 
 #request-permission-btn:hover, #close-permission-btn:hover {
-    background-color: #3470cc;
-}
-
-#close-permission-btn {
-    background-color: #555;
-}
-
-#close-permission-btn:hover {
-    background-color: #666;
+    background-color: #3aa282;
 }

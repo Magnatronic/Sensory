@@ -1,11 +1,16 @@
 /**
  * ThemeManager class to handle theme selection and switching
  */
-class ThemeManager {
+import { eventBus } from '../core/event-bus.js';
+import { stateMachine, AppStates } from '../core/state-machine.js';
+import { settingsManager } from '../core/app-config.js';
+
+export class ThemeManager {
     constructor() {
         this.themes = {};
         this.currentTheme = null;
         this.activeThemeId = null;
+        this.themeReady = false;
     }
 
     /**
@@ -15,6 +20,7 @@ class ThemeManager {
      */
     registerTheme(id, theme) {
         this.themes[id] = theme;
+        eventBus.emit('theme-registered', { id, theme });
     }
 
     /**
@@ -40,8 +46,16 @@ class ThemeManager {
      */
     initThemes(canvas) {
         for (const id in this.themes) {
-            this.themes[id].init(canvas);
+            try {
+                this.themes[id].init(canvas);
+                console.log(`Theme initialized: ${id}`);
+            } catch (error) {
+                console.error(`Error initializing theme: ${id}`, error);
+            }
         }
+        
+        this.themeReady = true;
+        eventBus.emit('themes-initialized');
     }
 
     /**
@@ -57,6 +71,9 @@ class ThemeManager {
             return false;
         }
 
+        // Store the old theme ID for the event
+        const oldThemeId = this.activeThemeId;
+
         // Stop and cleanup current theme if there is one
         if (this.currentTheme) {
             this.currentTheme.stop();
@@ -67,7 +84,16 @@ class ThemeManager {
         this.currentTheme = newTheme;
         this.activeThemeId = id;
         
-        // Return true to indicate successful switch
+        // Save the selected theme in settings
+        settingsManager.set('activeTheme', id);
+        
+        // Emit theme changed event
+        eventBus.emit('theme-changed', { 
+            newThemeId: id, 
+            oldThemeId, 
+            theme: newTheme 
+        });
+        
         return true;
     }
 
@@ -84,8 +110,12 @@ class ThemeManager {
      */
     startCurrentTheme() {
         if (this.currentTheme) {
-            this.currentTheme.start();
-            return true;
+            const result = this.currentTheme.start();
+            if (result) {
+                stateMachine.transition(AppStates.RUNNING, { themeId: this.activeThemeId });
+                eventBus.emit('theme-started', { themeId: this.activeThemeId });
+            }
+            return result;
         }
         return false;
     }
@@ -95,30 +125,40 @@ class ThemeManager {
      */
     stopCurrentTheme() {
         if (this.currentTheme) {
-            this.currentTheme.stop();
-            return true;
+            const result = this.currentTheme.stop();
+            if (result) {
+                stateMachine.transition(AppStates.PAUSED);
+                eventBus.emit('theme-stopped', { themeId: this.activeThemeId });
+            }
+            return result;
         }
         return false;
     }
 
     /**
-     * Handle sound detection from any audio processor
-     * @param {number} intensity - Sound intensity (0-1)
+     * Load a theme asynchronously (lazy loading)
+     * @param {string} themeId - The theme ID to load
+     * @returns {Promise} Promise that resolves when theme is loaded
      */
-    onSoundDetected(intensity) {
-        console.log(`ThemeManager: Sound detected with intensity ${intensity}`);
-        if (this.currentTheme && typeof this.currentTheme.onSoundDetected === 'function') {
-            this.currentTheme.onSoundDetected(intensity);
+    async loadTheme(themeId) {
+        // If theme already loaded, return it
+        if (this.themes[themeId]) {
+            return this.themes[themeId];
         }
-    }
 
-    /**
-     * Set the burst intensity for the current theme
-     * @param {number} value - Burst intensity value
-     */
-    setBurstIntensity(value) {
-        if (this.currentTheme && typeof this.currentTheme.setBurstIntensity === 'function') {
-            this.currentTheme.setBurstIntensity(value);
+        try {
+            // Dynamic import based on theme id
+            const module = await import(`./${themeId}/${themeId}.js`);
+            const ThemeClass = module.default;
+            
+            // Instantiate and register
+            const theme = new ThemeClass();
+            this.registerTheme(themeId, theme);
+            
+            return theme;
+        } catch (error) {
+            console.error(`Failed to load theme: ${themeId}`, error);
+            return null;
         }
     }
 }
