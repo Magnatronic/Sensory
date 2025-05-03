@@ -18,7 +18,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-          cache: 'npm'
+          # Removing the cache option since there's no package-lock.json
       
       - name: Generate unique subdomain from branch name
         id: subdomain

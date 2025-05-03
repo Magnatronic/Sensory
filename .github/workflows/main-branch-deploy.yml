@@ -17,7 +17,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-          cache: 'npm'
+          # Removing the cache option since there's no package-lock.json
       
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
