@@ -1,0 +1,396 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #121212;
+    color: #ffffff;
+    overflow: hidden; /* Prevent scrolling */
+    height: 100vh; /* Full viewport height */
+}
+
+/* Main app container with sidebar layout */
+.app-container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* Section headers */
+.section-header {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #444;
+    padding-bottom: 5px;
+}
+
+.section-header h3 {
+    font-size: 16px;
+    margin: 0;
+    color: #fff;
+}
+
+/* Sidebar for controls */
+.sidebar {
+    width: 280px;
+    background-color: rgba(30, 30, 40, 0.9);
+    padding: 20px;
+    box-sizing: border-box;
+    height: 100%;
+    overflow-y: auto; /* Allow scrolling within sidebar if needed */
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    border-right: 1px solid #333;
+    transition: transform 0.3s ease;
+    z-index: 100;
+}
+
+/* Main content area containing canvas */
+.main-content {
+    flex: 1;
+    height: 100%;
+    position: relative;
+}
+
+/* Audio controls */
+.audio-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.audio-button {
+    background-color: #2a5ca8;
+    padding: 10px;
+}
+
+.audio-button:hover {
+    background-color: #3470cc;
+}
+
+.audio-button.active {
+    background-color: #cc3434;
+}
+
+.audio-button.active:hover {
+    background-color: #e04040;
+}
+
+/* Volume meter */
+#volume-meter-container {
+    margin-top: 10px;
+}
+
+#volume-label {
+    font-size: 14px;
+    color: #ccc;
+    margin-bottom: 5px;
+}
+
+#volume-meter {
+    width: 100%;
+    height: 10px;
+    background-color: #333;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+#volume-level {
+    height: 100%;
+    width: 0%;
+    background-color: #2a5ca8;
+    transition: width 0.1s ease;
+}
+
+#volume-level.low {
+    background-color: #3470cc;
+}
+
+#volume-level.medium {
+    background-color: #cc9834;
+}
+
+#volume-level.high {
+    background-color: #cc3434;
+}
+
+/* Theme selector styles */
+.theme-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.theme-selector label {
+    font-size: 14px;
+    color: #ccc;
+}
+
+select {
+    padding: 8px 10px;
+    border-radius: 5px;
+    border: none;
+    background-color: #333;
+    color: white;
+    cursor: pointer;
+    width: 100%;
+}
+
+/* Button styles */
+.buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+button {
+    padding: 10px;
+    border-radius: 5px;
+    border: none;
+    background-color: #333;
+    color: white;
+    cursor: pointer;
+    width: 100%;
+    font-size: 14px;
+}
+
+button:hover {
+    background-color: #444;
+}
+
+button:disabled {
+    background-color: #555;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+#fullscreen-btn {
+    background-color: #2a5ca8;
+}
+
+#fullscreen-btn:hover {
+    background-color: #3470cc;
+}
+
+/* Theme control sliders */
+.theme-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.slider-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.slider-container label {
+    font-size: 14px;
+    color: #ccc;
+}
+
+.slider-with-value {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.slider {
+    -webkit-appearance: none;
+    flex: 1;
+    height: 8px;
+    background: #444;
+    outline: none;
+    border-radius: 4px;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: #2a5ca8;
+    cursor: pointer;
+    border-radius: 50%;
+}
+
+.slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: #2a5ca8;
+    cursor: pointer;
+    border-radius: 50%;
+    border: none;
+}
+
+.slider-value {
+    font-size: 14px;
+    color: #fff;
+    min-width: 30px;
+    text-align: right;
+}
+
+/* Canvas container styles */
+#canvas-container {
+    width: 100%;
+    height: 100%;
+    background-color: #000000;
+}
+
+/* Make sure the p5.js canvas fills the container */
+#canvas-container canvas {
+    display: block; /* Removes tiny gaps */
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Fullscreen specific styles */
+.fullscreen-active .sidebar {
+    transform: translateX(-100%); /* Hide sidebar when in fullscreen */
+    pointer-events: none;
+}
+
+.fullscreen-active:hover .sidebar {
+    transform: translateX(0); /* Show sidebar on hover when in fullscreen */
+    pointer-events: auto;
+}
+
+.fullscreen-active #canvas-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9000;
+}
+
+/* For browsers that support native fullscreen */
+#canvas-container:fullscreen {
+    width: 100vw;
+    height: 100vh;
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 768px) {
+    .app-container {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        width: 100%;
+        height: auto;
+        max-height: 50vh;
+        border-right: none;
+        border-bottom: 1px solid #333;
+    }
+    
+    .main-content {
+        height: 50vh;
+    }
+}
+
+/* Color picker styles */
+.color-pickers {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.color-picker-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.color-picker-container label {
+    font-size: 14px;
+    color: #ccc;
+}
+
+input[type="color"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 30px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 4px;
+}
+
+/* Add styles for permission overlay at the end of the file */
+
+/* Permission overlay styles */
+.permission-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+.permission-box {
+    background-color: #1a1a1a;
+    color: white;
+    border-radius: 10px;
+    padding: 2rem;
+    max-width: 500px;
+    text-align: center;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    border: 1px solid #333;
+}
+
+.permission-box h3 {
+    margin-top: 0;
+    color: #4ecca3;
+}
+
+.permission-box p {
+    margin: 1rem 0;
+    line-height: 1.5;
+}
+
+.permission-box ol, .permission-box ul {
+    text-align: left;
+    margin-bottom: 1.5rem;
+    padding-left: 1.5rem;
+}
+
+.permission-box li {
+    margin-bottom: 0.5rem;
+}
+
+.permission-image {
+    margin: 1.5rem 0;
+}
+
+#request-permission-btn, #close-permission-btn {
+    background-color: #4ecca3;
+    color: #111111;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin-top: 1rem;
+}
+
+#request-permission-btn:hover, #close-permission-btn:hover {
+    background-color: #3aa282;
+}
