@@ -162,3 +162,6 @@ export class ThemeManager {
         }
     }
 }
+
+// Create and export a singleton instance of ThemeManager
+export const themeManager = new ThemeManager();
